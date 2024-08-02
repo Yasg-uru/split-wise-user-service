@@ -1,7 +1,14 @@
 import userModel from "../models/user.model";
-import { Request, Response } from "express";
-import { HashedPassword } from "../utils/auth.utils";
+import { NextFunction, Request, Response } from "express";
+import {
+  generateResetToken,
+  HashedPassword,
+  hashResetToken,
+} from "../utils/auth.utils";
 import passport from "passport";
+import Errorhandler from "../utils/Errorhandler.util";
+import ErrorHandler from "../utils/Errorhandler.util";
+import { sendResetEmail } from "../utils/email.utils";
 export const googleAuth = passport.authenticate("google", {
   scope: ["profile", "email"],
 });
@@ -24,7 +31,24 @@ export const instagramAuthCallback = passport.authenticate("instagram", {
   session: true,
 });
 
-export const login = passport.authenticate("local", { session: true });
+export const login = (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate("local", (err: any, user: any, info: any) => {
+    if (err) {
+      console.log("this is a error:", err);
+      return next(new ErrorHandler(500, "Internal server error"));
+    }
+    if (!user) return next(new ErrorHandler(400, info.message));
+    req.logIn(user, (err) => {
+      if (err) {
+        console.log("this is a error:", err);
+        return next(new ErrorHandler(500, "Internal server error"));
+      }
+      res.status(200).json({
+        message: "Logged in successfully",
+      });
+    });
+  })(req, res, next);
+};
 
 export const signup = async (req: Request, res: Response) => {
   try {
@@ -52,10 +76,60 @@ export const signup = async (req: Request, res: Response) => {
     });
   }
 };
-export const profile = (req: Request, res: Response) => {
-    if (req.isAuthenticated()) {
-      res.send(`Hello, ${req.user}`);
-    } else {
-      res.redirect("/login");
+export const ForgotPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { email } = req.body;
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return next(new ErrorHandler(404, "User not found with this email"));
     }
-  };
+    const resetToken = await generateResetToken();
+    user.resetpasswordToken = await hashResetToken(resetToken);
+    user.resetpasswordTokenExpire = new Date(Date.now() + 3600000);
+    await user.save();
+    await sendResetEmail(email, resetToken);
+    res.status(200).json({
+      message: "password reset mail sent ",
+    });
+  } catch (error) {
+    next(new ErrorHandler(500, "Internal server error"));
+  }
+};
+export const ResetPassword = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { token, newPassword } = req.body;
+    const user = await userModel.findOne({
+      resetpasswordToken: token,
+      resetpasswordTokenExpire: { $gt: new Date() },
+    });
+    if (!user) {
+      return next(new ErrorHandler(404, "user not found "));
+    }
+    user.passwordHash = await HashedPassword(newPassword);
+    user.resetpasswordToken = undefined;
+    user.resetpasswordTokenExpire = undefined;
+    await user.save();
+    res.status(200).json({
+      message: "password reset successfully",
+    });
+  } catch (error) {
+    next(new ErrorHandler(500, "Internal server error"));
+  }
+};
+export const profile = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated()) {
+    res.status(200).json({
+      user: req.user,
+    });
+  } else {
+    next(new ErrorHandler(500, "Internal server error"));
+  }
+};

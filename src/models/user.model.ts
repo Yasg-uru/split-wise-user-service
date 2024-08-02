@@ -9,6 +9,9 @@ export interface User extends Document {
     token: string;
     refreshedToken: string;
   };
+  resetpasswordToken: string | undefined;
+  resetpasswordTokenExpire: Date | undefined;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -33,6 +36,12 @@ const UserSchema: Schema<User> = new Schema<User>(
       providerId: String,
       token: String,
       refreshedToken: String,
+    },
+    resetpasswordToken: {
+      type: String,
+    },
+    resetpasswordTokenExpire: {
+      type: Date,
     },
   },
   {

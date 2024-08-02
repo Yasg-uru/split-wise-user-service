@@ -8,7 +8,7 @@ import {
   instagramAuthCallback,
   login,
   signup,
-  profile
+  profile,
 } from "../controllers/auth.controller";
 
 const router = Router();
