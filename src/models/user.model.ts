@@ -25,7 +25,6 @@ const UserSchema: Schema<User> = new Schema<User>(
     },
     passwordHash: {
       type: String,
-      required: [true, "password is required"],
     },
     oauth2: {
       provider: {
