@@ -199,11 +199,12 @@ class GroupController {
   ) {
     try {
       const { groupId } = req.params;
-      const { inviterId, inviteeEmail, expiresAt } = req.body;
-      if (!inviterId || !inviteeEmail || !expiresAt) {
+      const { inviterId, inviteeEmail, expiresAt, inviteId } = req.body;
+      if (!inviterId || !inviteeEmail || !expiresAt || !inviteId) {
         return next(new ErrorHandler(404, "Required fields are missing "));
       }
       const newInviteGroup = new GroupInvite({
+        inviteId,
         groupId,
         inviterId,
         inviteeEmail,
@@ -272,11 +273,11 @@ class GroupController {
         res.status(200).json({
           message: "successfully joined this group ",
           group,
+          invite,
         });
       }
       res.status(200).json({
-        message: "successfully updated their status",
-        invite,
+        message: "successfuly ignored this invitation",
       });
     } catch (error) {
       next(new ErrorHandler(500, "internal server error"));

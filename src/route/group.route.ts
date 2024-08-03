@@ -25,7 +25,7 @@ GroupRouter.get(
 GroupRouter.put("/update/status/:inviteId", GroupController.updatestatus);
 GroupRouter.get("/listinvites/:groupId", GroupController.ListInvites);
 GroupRouter.put(
-  "/update/notification",
+  "/update/notification/:groupId",
   GroupController.updateNotificationPreference
 );
 
