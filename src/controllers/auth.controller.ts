@@ -240,9 +240,18 @@ export const ForgotPassword = async (
 ) => {
   try {
     const { email } = req.body;
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({
+      email,
+      "oauth2.provider": { $ne: "google" },
+    });
+
     if (!user) {
-      return next(new ErrorHandler(404, "User not found with this email"));
+      return next(
+        new ErrorHandler(
+          404,
+          "User not found with this email or try with another strategy"
+        )
+      );
     }
     const resetToken = await generateResetToken();
     user.resetpasswordToken = await hashResetToken(resetToken);
