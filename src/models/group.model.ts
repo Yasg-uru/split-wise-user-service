@@ -6,6 +6,7 @@ export interface IGroup extends Document {
   members: {
     userId: Schema.Types.ObjectId;
     role: string;
+    _id?: string;
   }[];
   settings: {
     currency: string;
